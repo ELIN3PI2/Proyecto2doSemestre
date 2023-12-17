@@ -37,4 +37,4 @@ with open('base de datos.json') as bdjson:
 
 # Guardar el archivo JSON actualizado
 with open('base de datos.json', 'w') as f:
-    json.dump(json_data, f)
+    json.dump(responses, f, indent=4)
