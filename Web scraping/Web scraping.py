@@ -30,7 +30,7 @@ with open('base de datos.json') as bdjson:
                     'MW en mantenimiento': 0,
                     'MW limitados en la generacion termica': 0,
                     'Termoelectricas fuera de servicio': [],
-                    'Termoelectricas en funcionamiento': [],
+                    'Termoelectricas en mantenimiento': [],
                     'Info':soup.get_text()
                 }
             ]
