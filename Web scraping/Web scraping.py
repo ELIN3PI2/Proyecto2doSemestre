@@ -1,7 +1,6 @@
-import csv
-import requests
+import csv, requests, json
+from datetime import date
 from bs4 import BeautifulSoup
-import json
 
 # Abrir el archivo json
 with open('base de datos.json') as bdjson:
@@ -11,17 +10,19 @@ with open('base de datos.json') as bdjson:
     with open('./Web scraping/links.csv', 'r') as file:
         reader = csv.reader(file)
 
-        #obtener los datos de cada una de las urls y parsear el html
+        # Obtener los datos de cada una de las urls y parsear el html
         responses={}
         for row in reader:
-            if row[3] in json_data:
+            data = [int(i) for i in row[3].split(' ')]
+            data = str(date(data[2], data[1], data[0]))
+            if data in json_data:
                 continue
             try:
                 response = requests.get(row[1])
                 soup = BeautifulSoup(response.text, 'html.parser')
             except:
                 continue
-            responses[row[3]] = [
+            responses[data] = [
                 {
                     'Maxima afectacion': 0,
                     'MW disponibles': 0,
@@ -36,5 +37,6 @@ with open('base de datos.json') as bdjson:
             ]
 
 # Guardar el archivo JSON actualizado
+json_data.update(responses)
 with open('base de datos.json', 'w') as f:
-    json.dump(responses, f, indent=4)
+    json.dump(json_data, f, indent=1)
