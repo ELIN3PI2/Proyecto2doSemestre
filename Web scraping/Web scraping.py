@@ -22,25 +22,23 @@ with open('./base de datos.json') as bdjson:
                 soup = BeautifulSoup(response.text, 'html.parser')
             except:
                 continue
-            responses[data] = [
-                {
-                    'Maxima afectacion': 0,
-                    'MW disponibles': 0,
-                    'Demanda del dia': 0,
-                    'MW indisponibles por averias': 0,
-                    'MW en mantenimiento': 0,
-                    'MW limitados en la generacion termica': 0,
-                    'Termoelectricas fuera de servicio': [
-                        '',
-                        ''
-                    ],
-                    'Termoelectricas en mantenimiento': [
-                        '',
-                        ''
-                    ],
-                    'Info':soup.get_text()
-                }
-            ]
+            responses[data] = {
+                'Maxima afectacion': 0,
+                'MW disponibles': 0,
+                'Demanda del dia': 0,
+                'MW indisponibles por averias': 0,
+                'MW en mantenimiento': 0,
+                'MW limitados en la generacion termica': 0,
+                'Termoelectricas fuera de servicio': [
+                    '',
+                    ''
+                ],
+                'Termoelectricas en mantenimiento': [
+                    '',
+                    ''
+                ],
+                'Info':soup.get_text()
+            }
 
 # Guardar el archivo JSON actualizado
 json_data.update(responses)
