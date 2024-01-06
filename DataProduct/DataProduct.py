@@ -17,9 +17,9 @@ with st.container():
          adquiera un mayor conocimiento sobre el tema y de esta forma generar una mayor conciencia de por qué resulta importante el ahorro de electricidad.
          """)
 
-with st.expander("Comportamiento de los parametros"):
+with st.expander("Comportamiento de los parámetros"):
     #Titulo de la visualizacion
-    st.title("Comportamiento de los diferentes parametros a lo largo del tiempo")
+    st.title("Comportamiento de los diferentes parámetros a lo largo del tiempo")
     categories = ["MW disponibles","Demanda del dia","MW indisponibles por averias","MW en mantenimiento","MW limitados en la generacion termica"]
     if 'end_date' not in st.session_state:
         st.session_state.end_date = dt(db.index.max().year, db.index.max().month, db.index.max().day)
@@ -51,7 +51,11 @@ with st.expander("Comportamiento de los parametros"):
         else:
             visibility = 'legendonly'
         fig.add_scatter(x=filter_df.index , y=filter_df[line], mode="lines", name=line, visible=visibility)
-
+    fig.update_layout(
+    title='Comportamiento de los parámetros',
+    xaxis_title='Tiempo',
+    yaxis_title='Cantidad'
+    )
     st.plotly_chart(fig)
 
 db.index.name = 'Fecha'
@@ -136,36 +140,29 @@ with st.expander("MW limitados en la generación térmica"):
              
              """)
     
-with st.expander('Termoelectricas fuera de servicio y en mantenimiento'):
-    st.title('Analisis de las termoelectricas fuera de servicio y en mantenimiento')
+with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
+    st.title('Análisis de las termoeléctricas fuera de servicio y en mantenimiento')
     st.markdown('En el país existen ocho centrales termoeléctricas con un total de 20 bloques en explotación, que constituyen la parte más importante de la generación base del sistema eléctrico.')
     st.markdown('Fundada por el líder histórico de la Revolución, Fidel Castro, la termoeléctrica Guiteras destaca por encontrarse en la zona occidental de la Isla, donde se concentran las mayores cargas, y por consumir crudo nacional por oleoducto, sin necesidad de gastos por concepto de transportación, entre otras ventajas. Esta es la de mayor generación en el país.')
     
 
     #Realizar los analisis
     #un mapa con las localizaciones
-    st.subheader('Localizacion de las termoelectricas')
+    st.subheader('Localización de las termoeléctricas')
 
     #cargar el archivo de las localizaciones de las termoelectricas
     df=pd.DataFrame(
         {
             
-            "Latitude":[20.728433644751583,23.160837163922988,23.160837163922988,21.567053113289774,
-                        23.019279319106403,23.1302452430394,23.10243454755323,21.567013202529225,
-                        19.995374637418852,19.995374637418852,23.019279319106403,19.995374637418852,
-                        22.159797344832885,23.019279319106403,23.1302452430394,23.044739788487856,
-                        23.044739788487856,23.044739788487856,23.044739788487856,19.995374637418852,23.125633165882828,23.140019310154766],
-            'Longitude':[-75.5967566913524,-81.96305989167605,-81.96305989167605,-77.2713085457038,
-                         -82.74817643083628,-82.33771615913784,-81.52929387263102,-77.27144802057127,
-                         -75.8714747952282,-75.8714747952282,-82.74817643083628,-75.8714747952282,
-                         -80.45564991842924,-82.74817643083628,-82.33771615913784,-82.00893712051648,
-                         -82.00893712051648,-82.00893712051648,-82.00893712051648,-75.8714747952282,-82.35890043084758, 
-                         -81.26861030262405],
-            'Names':['2-Felton','2-SC','3-SC','5-Diez de Octubre','5-Maximo Gomez',
-                               '6-Antonio Maceo','1-AG','6-Diez de Octubre','6-Rente','3-Rente',
-                               '8-Mariel','5-Rente','3-Carlos M de Cespedes','6-Mariel','1-Habana',
-                               '6-Jaruco','3-Jaruco','4-Jaruco','5-Jaruco','4-Rente',"Tallapiedra", "2-EG Varadero"]
-
+            "Latitude":[20.728433644751583,23.160837163922988,21.567053113289774,
+                        23.019279319106403,23.1302452430394,23.10243454755323,
+                        22.159797344832885,23.125633165882828,],
+            'Longitude':[-75.5967566913524,-81.96305989167605,-77.2713085457038,
+                         -82.74817643083628,-82.33771615913784,-81.52929387263102,
+                         -80.45564991842924,-82.35890043084758],
+            'Names':['CTE Lidio Ramón Pérez(Felton)','CTE Ernesto Guevara(Santa Cruz)','CTE Diez de Octubre(Nuevitas)','CTE Máximo Gómez(Mariel)',
+                               'CTE Antonio Maceo(Renté)','CTE Antonio Guiteras','CTE Carlos M de Cespedes(Cienfuegos)',
+                               "CTE Otto Parellada(Tallapiedra)"]
         }
     )
     
@@ -174,16 +171,18 @@ with st.expander('Termoelectricas fuera de servicio y en mantenimiento'):
         folium.Marker([df.iloc[i]['Latitude'], df.iloc[i]['Longitude']], popup=df.iloc[i]['Names']).add_to(mapa)    
     folium_static(mapa)
 
-
+    
     #un grafico de lineas de dos variables para mostrar las cantidades a lo largo del tiempo
+    st.subheader('Cantidad de termoeléctricas dependiendo de su estado a lo largo del tiempo')
+
     fecha_minima = pd.to_datetime(db['Fecha']).min()
     fecha_maxima = pd.to_datetime(db['Fecha']).max()
 
     # Crear un selector de fechas en Streamlit para la fecha de inicio del rango
-    fecha_inicio = st.date_input("Selecciona la fecha a partir de cuando quiere ver el analisis", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_minima)
+    fecha_inicio = st.date_input("Selecciona la fecha a partir de cuándo quiere ver el análisis", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_minima)
 
     # Crear un selector de fechas en Streamlit para la fecha de fin del rango
-    fecha_fin = st.date_input("Selecciona la fecha de finalizacion", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_maxima)
+    fecha_fin = st.date_input("Selecciona la fecha de finalización", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_maxima)
 
     # Convertir las fechas seleccionadas a formato datetime
     fecha_inicio = pd.to_datetime(fecha_inicio)
@@ -210,15 +209,19 @@ with st.expander('Termoelectricas fuera de servicio y en mantenimiento'):
     fig_t=go.Figure()
     fig_t.add_scatter(x=filter['Fecha'] , y=cant_fs, mode="lines", name="Fuera de servicio")
     fig_t.add_scatter(x=filter['Fecha'] , y=cant_m, mode="lines", name="En Mantenimiento")
-
+    fig_t.update_layout(
+    title='Cantidad de termoeléctricas por su estado',
+    xaxis_title='Fecha',
+    yaxis_title='Cantidad de termoeléctricas'
+    )
     st.plotly_chart(fig_t)
 
     # #un grafico de barras apiladas por termoelectricas
   
     st.markdown('La vida útil de una termoeléctrica está entre 30 y 35 años. En nuestro caso, excepto los dos bloques de Felton, que llevan 25 y 21 años sincronizados, los demás tienen más de 30 años de explotación y siete de ellos acumulan más de 40 años operando')
-    st.markdown('Mediante el grafico anterior se puede apreciar las comparaciones de los dos estados respectos a sus cantidades, por lo que si hay un número significativamente mayor de termoeléctricas fuera de servicio a las que están en mantenimiento, esto podría indicar problemas graves en la capacidad de generación de energía del país. Por otro lado, si hay una proporción mayor de termoeléctricas en mantenimiento en comparación con las que están fuera de servicio, podría sugerir que el país está tomando medidas proactivas para mantener y mejorar su infraestructura energética.')
+    st.markdown('Mediante el gráfico anterior se puede apreciar las comparaciones de los dos estados respectos a sus cantidades, por lo que si hay un número significativamente mayor de termoeléctricas fuera de servicio a las que están en mantenimiento, esto podría indicar problemas graves en la capacidad de generación de energía del país. Por otro lado, si hay una proporción mayor de termoeléctricas en mantenimiento en comparación con las que están fuera de servicio, podría sugerir que el país está tomando medidas proactivas para mantener y mejorar su infraestructura energética.')
     
-    st.subheader('Frecuencias de las termoelectricas por estado')
+    st.subheader('Frecuencias de las termoeléctricas por estado')
     # Crear un selectbox para seleccionar el año
     year = st.selectbox("Seleccione un año", db['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
@@ -259,9 +262,13 @@ with st.expander('Termoelectricas fuera de servicio y en mantenimiento'):
 
     fig_b.add_trace(go.Bar(x=thermoelectric, y=f_s, name='Fuera de servicio', marker_color='blue'))
     fig_b.add_trace(go.Bar(x=thermoelectric, y=m, name='En mantenimiento', marker_color='red'))
-
+    fig_b.update_layout(
+    title='Frecuencias de las termoeléctricas por estado',
+    xaxis_title='Nombres de las termoeléctricas',
+    yaxis_title='Frecuencia'
+    )
     fig_b.update_layout(barmode='group')
 
     st.plotly_chart(fig_b)
-    st.markdown('Se puede obtener una visión detallada de la distribución geográfica de las instalaciones afectadas. Este grafico podría proporcionar información sobre las regiones específicas del país que podrían haber experimentado interrupciones en el suministro de energía debido a la falta de funcionamiento de las termoeléctricas. También podría revelar áreas donde se están realizando esfuerzos significativos para el mantenimiento y la mejora de la infraestructura energética.')
+    st.markdown('Se puede obtener una visión detallada de la distribución geográfica de las instalaciones afectadas. Este gráfico podría proporcionar información sobre las regiones específicas del país que podrían haber experimentado interrupciones en el suministro de energía debido a la falta de funcionamiento de las termoeléctricas. También podría revelar áreas donde se están realizando esfuerzos significativos para el mantenimiento y la mejora de la infraestructura energética.')
     st.markdown('Al analizar los nombres de las termoeléctricas afectadas, se podría identificar si ciertas plantas tienen un historial recurrente de problemas, esto podría ser útil para comprender mejor los desafíos específicos que enfrenta cada planta y para tomar decisiones informadas sobre la asignación de recursos para el mantenimiento y la reparación.')
