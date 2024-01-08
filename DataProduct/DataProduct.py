@@ -20,10 +20,12 @@ with st.expander("Comportamiento de los parámetros"):
     #Titulo de la visualizacion
     st.title("Comportamiento de los diferentes parámetros a lo largo del tiempo")
     categories = ["MW disponibles","Demanda del dia","MW indisponibles por averias","MW en mantenimiento","MW limitados en la generacion termica"]
-    if 'end_date' not in st.session_state:
-        st.session_state.end_date = dt(db.index.max().year, db.index.max().month, db.index.max().day)
+    
     if 'start_date' not in st.session_state:
         st.session_state.start_date = dt(db.index.min().year, db.index.min().month, db.index.min().day)
+    if 'end_date' not in st.session_state:
+        st.session_state.end_date = dt(db.index.max().year, db.index.max().month, db.index.max().day)
+    
     fig = go.Figure()
 
     # Agregar un selector de fechas para elegir el rango de fechas a mostrar
@@ -42,15 +44,15 @@ with st.expander("Comportamiento de los parámetros"):
     fig.update_layout(title='Comportamiento de los parámetros', xaxis_title='Tiempo', yaxis_title='Cantidad')
     st.plotly_chart(fig)
 
-mariamdb = db
-mariamdb.index.name = 'Fecha'
-mariamdb = mariamdb.reset_index()
-if mariamdb['Fecha'].dtype != 'datetime64[ns]':
-    mariamdb['Fecha'] = pd.to_datetime(mariamdb['Fecha'])
+mariandb = db
+mariandb.index.name = 'Fecha'
+mariandb = mariandb.reset_index()
+if mariandb['Fecha'].dtype != 'datetime64[ns]':
+    mariandb['Fecha'] = pd.to_datetime(mariandb['Fecha'])
         
-mariamdb['Mes'] = mariamdb['Fecha'].dt.month
-mariamdb['Mes']=mariamdb['Mes'].astype (str)
-mariamdb['Año'] = mariamdb['Fecha'].dt.year
+mariandb['Mes'] = mariandb['Fecha'].dt.month
+mariandb['Mes']=mariandb['Mes'].astype (str)
+mariandb['Año'] = mariandb['Fecha'].dt.year
 
 with st.expander("Máxima afectación durante el horario pico"):
     st.write("---")
@@ -66,7 +68,7 @@ with st.expander("Máxima afectación durante el horario pico"):
              """)
  
     #Calcular la media por mes de la máxima afectación en el horario pico para cada año
-    media_por_mes = mariamdb.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
+    media_por_mes = mariandb.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
     fig = px.bar(media_por_mes, x='Mes', y='Maxima afectacion', barmode="group",color='Año' ,color_discrete_sequence=px.colors.qualitative.Plotly)
 
     # Mostrar el gráfico en Streamlit
@@ -75,11 +77,11 @@ with st.expander("Máxima afectación durante el horario pico"):
     
     #hacer un grafico de cajas:
     # Crear un selectbox para seleccionar el año
-    ano = st.selectbox("Selecciona un año", mariamdb['Año'].unique())
+    ano = st.selectbox("Selecciona un año", mariandb['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
-    mariamdb_filtrado = mariamdb[mariamdb['Año'] == ano]
+    mariandb_filtrado = mariandb[mariandb['Año'] == ano]
     # Crear el boxplot
-    boxplot = px.box(mariamdb_filtrado, x="Mes", y="Maxima afectacion",
+    boxplot = px.box(mariandb_filtrado, x="Mes", y="Maxima afectacion",
                     title='Distribución de Máxima Afectación durante Horario Pico de Megawatts por Mes',
                     labels={'Max_Afectacion_Horario_Pico_MW': 'Máxima Afectación (MW)', 'x': 'Mes'},
                     color_discrete_sequence=['#2B83BA'])
@@ -94,7 +96,7 @@ with st.expander("Demanda vs Disponibilidad"):
              Resulta imposible hablar de disponibilidad sin hablar de demanda y viceversa, lo cual se comprueba en el siguiente grafico que muestra la fuerte correlaci'on exitente entre las dos variables:
              """)
     #grafico de dispersion
-    fig = px.scatter(mariamdb_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
+    fig = px.scatter(mariandb_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
     # Personalizar el diseño del gráfico
     fig.update_traces(marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')),
                     selector=dict(mode='markers+text'))
@@ -109,13 +111,13 @@ with st.expander("Demanda vs Disponibilidad"):
              """
     )
     
-    deficit=mariamdb["Demanda del dia"]-mariamdb["MW disponibles"]
+    deficit=mariandb["Demanda del dia"]-mariandb["MW disponibles"]
     deficit[deficit<0]=0
-    mariamdb["Deficit"]=deficit
-    year=st.selectbox("Seleccione el anno",mariamdb['Año'].unique())
-    media_deficit = mariamdb.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
-    mariamdb_filtrado2 = mariamdb[mariamdb['Año'] == year]
-    fig=px.bar(mariamdb_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
+    mariandb["Deficit"]=deficit
+    year=st.selectbox("Seleccione el anno",mariandb['Año'].unique())
+    media_deficit = mariandb.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
+    mariandb_filtrado2 = mariandb[mariandb['Año'] == year]
+    fig=px.bar(mariandb_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
     st.plotly_chart(fig)
     
 with st.expander("MW limitados en la generación térmica"):
@@ -160,21 +162,23 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     #un grafico de lineas de dos variables para mostrar las cantidades a lo largo del tiempo
     st.subheader('Cantidad de termoeléctricas dependiendo de su estado a lo largo del tiempo')
 
-    fecha_minima = pd.to_datetime(db['Fecha']).min()
-    fecha_maxima = pd.to_datetime(db['Fecha']).max()
-
+    if 'fecha_minima' not in st.session_state:
+        st.session_state.fecha_minima = dt(db.index.min().year, db.index.min().month, db.index.min().day)
+    if 'fecha_maxima' not in st.session_state:
+        st.session_state.fecha_maxima = dt(db.index.max().year, db.index.max().month, db.index.max().day)
+    
     # Crear un selector de fechas en Streamlit para la fecha de inicio del rango
-    fecha_inicio = st.date_input("Selecciona la fecha a partir de cuándo quiere ver el análisis", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_minima)
+    fecha_inicio = st.date_input("Selecciona la fecha a partir de cuándo quiere ver el análisis", min_value=db.index.min(), max_value=st.session_state.fecha_maxima, value=st.session_state.fecha_minima)
 
     # Crear un selector de fechas en Streamlit para la fecha de fin del rango
-    fecha_fin = st.date_input("Selecciona la fecha de finalización", min_value=fecha_minima, max_value=fecha_maxima, value=fecha_maxima)
+    fecha_fin = st.date_input("Selecciona la fecha de finalización", min_value=st.session_state.fecha_minima, max_value=db.index.max(), value=st.session_state.fecha_maxima)
 
     # Convertir las fechas seleccionadas a formato datetime
-    fecha_inicio = pd.to_datetime(fecha_inicio)
-    fecha_fin = pd.to_datetime(fecha_fin)
+    st.session_state.fecha_minima = dt(fecha_inicio.year, fecha_inicio.month, fecha_inicio.day)
+    st.session_state.fecha_fin = dt(fecha_fin.year, fecha_fin.month, fecha_fin.day)
 
     # Filtrar el dataframe por el rango de fechas seleccionado
-    filter = db[(db['Fecha'] >= fecha_inicio) & (db['Fecha'] <= fecha_fin)]
+    filter = db[(db.index >= st.session_state.fecha_minima) & (db.index <= st.session_state.fecha_fin)]
     
     cant_fs= []#cantidad de unidades fuera de servicio
     cant_m=[]#cantidad de unidades en mantenimiento
@@ -192,8 +196,8 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
         cant_fs.append(c)
     
     fig_t=go.Figure()
-    fig_t.add_scatter(x=filter['Fecha'] , y=cant_fs, mode="lines", name="Fuera de servicio")
-    fig_t.add_scatter(x=filter['Fecha'] , y=cant_m, mode="lines", name="En Mantenimiento")
+    fig_t.add_scatter(x=filter.index , y=cant_fs, mode="lines", name="Fuera de servicio")
+    fig_t.add_scatter(x=filter.index , y=cant_m, mode="lines", name="En Mantenimiento")
     fig_t.update_layout(
     title='Cantidad de termoeléctricas por su estado',
     xaxis_title='Fecha',
@@ -208,9 +212,9 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     
     st.subheader('Frecuencias de las termoeléctricas por estado')
     # Crear un selectbox para seleccionar el año
-    year = st.selectbox("Seleccione un año", db['Año'].unique())
+    year = st.selectbox("Seleccione un año", mariandb['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
-    filtrado = db[db['Año'] == year]
+    filtrado = mariandb[mariandb['Año'] == year]
     
     thermoelectric=[]
     for i in filtrado['Termoelectricas en mantenimiento']:
@@ -270,15 +274,15 @@ with st.expander('MW indisponible por averías y por mantenimiento'):
     st.session_state.end_day = dt(end_day.year, end_day.month, end_day.day)
 
     # Filtrar la bd con respecto a las fechas seleccionadas
-    filter_df2 = db[(db.index >= start_day) & (db.index <= st.session_state.end_date)]
+    filter_df2 = db[(db.index >= st.session_state.start_day) & (db.index <= st.session_state.end_date)]
     filter_df2 = filter_df2[['MW indisponibles por averias', 'MW en mantenimiento']]
 
-    column = ['MW indisponibles por averias', 'MW en mantenimiento']
+    column = [i for i in filter_df2]
     st.write(f'A continuación observamos el gráfico de {column[0]} y {column[1]} desde el {start_day.day}/{start_day.month}/{start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
 
     fig1 = go.Figure()
-    for i in column:
-        fig1.add_trace(go.Scatter(x=filter_df2.index, y=i, mode='lines', name=i))
+    for i in filter_df2:
+        fig1.add_scatter(x=filter_df2.index, y=filter_df2[i], mode='lines', name=i)
     
     st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[column[0]].mean(), 2)} es, aproximadamente, el promedio de {column[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[column[1]].mean(), 2)} es el aproximado correspondiente a {column[1]}. Además de esto, también tenemos una mediana de {filter_df2[column[0]].median()} en los {column[0]} y de {filter_df2[column[1]].median()} en {column[1]}.')
     if len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) == 1:
