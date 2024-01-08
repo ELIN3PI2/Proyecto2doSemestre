@@ -23,12 +23,12 @@ with open('./base de datos.json') as bdjson:
             except:
                 continue
             responses[data] = {
-                'Maxima afectacion': 0,
-                'MW disponibles': 0,
-                'Demanda del dia': 0,
-                'MW indisponibles por averias': 0,
-                'MW en mantenimiento': 0,
-                'MW limitados en la generacion termica': 0,
+                'Maxima afectacion': None,
+                'MW disponibles': None,
+                'Demanda del dia': None,
+                'MW indisponibles por averias': None,
+                'MW en mantenimiento': None,
+                'MW limitados en la generacion termica': None,
                 'Termoelectricas fuera de servicio': [
                     '',
                     ''

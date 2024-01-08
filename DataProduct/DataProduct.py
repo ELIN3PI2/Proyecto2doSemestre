@@ -1,6 +1,5 @@
-import os, streamlit as st, pandas as pd,plotly.express as px, plotly.graph_objects as go
+import os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go
 from datetime import datetime as dt
-import folium
 from streamlit_folium import folium_static
 
 # Cargamos el contenido del json en un Data Frame obteniendo la ruta q contiene el archivo y luego combinando
@@ -37,35 +36,21 @@ with st.expander("Comportamiento de los parámetros"):
     filter_df = db[(db.index >= st.session_state.start_date) & (db.index <= st.session_state.end_date)]
     filter_df = filter_df.drop(['Termoelectricas fuera de servicio', 'Termoelectricas en mantenimiento'], axis = 1)
 
-    maxafectcheck = st.checkbox("Maxima afectacion", True)
-    mwdispctcheck = st.checkbox("MW disponibles", True)
-    demdiactcheck = st.checkbox("Demanda del dia", True)
-    mwinavctcheck = st.checkbox("MW indisponibles por averias", True)
-    mwmantctcheck = st.checkbox("MW en mantenimiento", True)
-    mwligtctcheck = st.checkbox("MW limitados en la generacion termica", True)
-
     # Crear el gráfico
     for line in filter_df:
-        if (line == 'Maxima afectacion' and maxafectcheck) or (line == 'MW disponibles' and mwdispctcheck) or (line == 'Demanda del dia' and demdiactcheck) or (line == 'MW indisponibles por averias' and mwinavctcheck) or (line == 'MW en mantenimiento' and mwmantctcheck) or (line == 'MW limitados en la generacion termica' and mwligtctcheck):
-            visibility = True
-        else:
-            visibility = 'legendonly'
-        fig.add_scatter(x=filter_df.index , y=filter_df[line], mode="lines", name=line, visible=visibility)
-    fig.update_layout(
-    title='Comportamiento de los parámetros',
-    xaxis_title='Tiempo',
-    yaxis_title='Cantidad'
-    )
+        fig.add_scatter(x=filter_df.index , y=filter_df[line], mode="lines", name=line)
+    fig.update_layout(title='Comportamiento de los parámetros', xaxis_title='Tiempo', yaxis_title='Cantidad')
     st.plotly_chart(fig)
 
-db.index.name = 'Fecha'
-db = db.reset_index()
-if db['Fecha'].dtype != 'datetime64[ns]':
-    db['Fecha'] = pd.to_datetime(db['Fecha'])
+mariamdb = db
+mariamdb.index.name = 'Fecha'
+mariamdb = mariamdb.reset_index()
+if mariamdb['Fecha'].dtype != 'datetime64[ns]':
+    mariamdb['Fecha'] = pd.to_datetime(mariamdb['Fecha'])
         
-db['Mes'] = db['Fecha'].dt.month
-db['Mes']=db['Mes'].astype (str)
-db['Año'] = db['Fecha'].dt.year
+mariamdb['Mes'] = mariamdb['Fecha'].dt.month
+mariamdb['Mes']=mariamdb['Mes'].astype (str)
+mariamdb['Año'] = mariamdb['Fecha'].dt.year
 
 with st.expander("Máxima afectación durante el horario pico"):
     st.write("---")
@@ -81,7 +66,7 @@ with st.expander("Máxima afectación durante el horario pico"):
              """)
  
     #Calcular la media por mes de la máxima afectación en el horario pico para cada año
-    media_por_mes = db.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
+    media_por_mes = mariamdb.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
     fig = px.bar(media_por_mes, x='Mes', y='Maxima afectacion', barmode="group",color='Año' ,color_discrete_sequence=px.colors.qualitative.Plotly)
 
     # Mostrar el gráfico en Streamlit
@@ -90,11 +75,11 @@ with st.expander("Máxima afectación durante el horario pico"):
     
     #hacer un grafico de cajas:
     # Crear un selectbox para seleccionar el año
-    ano = st.selectbox("Selecciona un año", db['Año'].unique())
+    ano = st.selectbox("Selecciona un año", mariamdb['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
-    db_filtrado = db[db['Año'] == ano]
+    mariamdb_filtrado = mariamdb[mariamdb['Año'] == ano]
     # Crear el boxplot
-    boxplot = px.box(db_filtrado, x="Mes", y="Maxima afectacion",
+    boxplot = px.box(mariamdb_filtrado, x="Mes", y="Maxima afectacion",
                     title='Distribución de Máxima Afectación durante Horario Pico de Megawatts por Mes',
                     labels={'Max_Afectacion_Horario_Pico_MW': 'Máxima Afectación (MW)', 'x': 'Mes'},
                     color_discrete_sequence=['#2B83BA'])
@@ -109,7 +94,7 @@ with st.expander("Demanda vs Disponibilidad"):
              Resulta imposible hablar de disponibilidad sin hablar de demanda y viceversa, lo cual se comprueba en el siguiente grafico que muestra la fuerte correlaci'on exitente entre las dos variables:
              """)
     #grafico de dispersion
-    fig = px.scatter(db_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
+    fig = px.scatter(mariamdb_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
     # Personalizar el diseño del gráfico
     fig.update_traces(marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')),
                     selector=dict(mode='markers+text'))
@@ -124,13 +109,13 @@ with st.expander("Demanda vs Disponibilidad"):
              """
     )
     
-    deficit=db["Demanda del dia"]-db["MW disponibles"]
+    deficit=mariamdb["Demanda del dia"]-mariamdb["MW disponibles"]
     deficit[deficit<0]=0
-    db["Deficit"]=deficit
-    year=st.selectbox("Seleccione el anno",db['Año'].unique())
-    media_deficit = db.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
-    db_filtrado2 = db[db['Año'] == year]
-    fig=px.bar(db_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
+    mariamdb["Deficit"]=deficit
+    year=st.selectbox("Seleccione el anno",mariamdb['Año'].unique())
+    media_deficit = mariamdb.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
+    mariamdb_filtrado2 = mariamdb[mariamdb['Año'] == year]
+    fig=px.bar(mariamdb_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
     st.plotly_chart(fig)
     
 with st.expander("MW limitados en la generación térmica"):
@@ -272,3 +257,50 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     st.plotly_chart(fig_b)
     st.markdown('Se puede obtener una visión detallada de la distribución geográfica de las instalaciones afectadas. Este gráfico podría proporcionar información sobre las regiones específicas del país que podrían haber experimentado interrupciones en el suministro de energía debido a la falta de funcionamiento de las termoeléctricas. También podría revelar áreas donde se están realizando esfuerzos significativos para el mantenimiento y la mejora de la infraestructura energética.')
     st.markdown('Al analizar los nombres de las termoeléctricas afectadas, se podría identificar si ciertas plantas tienen un historial recurrente de problemas, esto podría ser útil para comprender mejor los desafíos específicos que enfrenta cada planta y para tomar decisiones informadas sobre la asignación de recursos para el mantenimiento y la reparación.')
+
+with st.expander('MW indisponible por averías y por mantenimiento'):
+    if 'start_day' not in st.session_state:
+        st.session_state.start_day = dt(db.index.min().year, db.index.min().month, db.index.min().day)
+    if 'end_day' not in st.session_state:
+        st.session_state.end_day = dt(db.index.max().year, db.index.max().month, db.index.max().day)
+    
+    start_day = st.date_input(label='Fecha inicial', value=st.session_state.start_day, min_value=db.index.min(), max_value=st.session_state.end_day)
+    st.session_state.start_day = dt(start_day.year, start_day.month, start_day.day)
+    end_day = st.date_input(label='Fecha final', value=st.session_state.end_day, min_value=st.session_state.start_day, max_value=db.index.max())
+    st.session_state.end_day = dt(end_day.year, end_day.month, end_day.day)
+
+    # Filtrar la bd con respecto a las fechas seleccionadas
+    filter_df2 = db[(db.index >= start_day) & (db.index <= st.session_state.end_date)]
+    filter_df2 = filter_df2[['MW indisponibles por averias', 'MW en mantenimiento']]
+
+    column = ['MW indisponibles por averias', 'MW en mantenimiento']
+    st.write(f'A continuación observamos el gráfico de {column[0]} y {column[1]} desde el {start_day.day}/{start_day.month}/{start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
+
+    fig1 = go.Figure()
+    for i in column:
+        fig1.add_trace(go.Scatter(x=filter_df2.index, y=i, mode='lines', name=i))
+    
+    st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[column[0]].mean(), 2)} es, aproximadamente, el promedio de {column[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[column[1]].mean(), 2)} es el aproximado correspondiente a {column[1]}. Además de esto, también tenemos una mediana de {filter_df2[column[0]].median()} en los {column[0]} y de {filter_df2[column[1]].median()} en {column[1]}.')
+    if len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) == 1:
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor pero, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
+    elif len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) > 1 or len(filter_df2[column[0]].mode()) > 1 and len(filter_df[column[1]].mode()) == 1:
+        if len(filter_df2[column[0]].mode()) > 1:
+            mw = column[0]
+            liste = [str(i) for i in filter_df[column[0]].mode()]
+        else:
+            mw = column[1]
+            liste = [str(i) for i in filter_df[column[1]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
+    else:
+        liste = [str(i) for i in filter_df[column[0]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango q usted eligió son {len(filter_df[column].mode())} valores y estos son {", ".join(liste)}')
+    st.write(f'Ahora toca mostrar el valor máximo, que en este conjunto de datos es de {filter_df[column].max()} y el valor mínimo que es de {filter_df[column].min()}')
+    st.write(f'Gracias a la desviación estándar podemos observar cuanto se aleja de su media, en este caso su valor es de aproximadamente {round(filter_df[column].std(), 2)}, a continuación muestro un gráfico comparando la desviación estándar y el gráfico de arriba:')
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=filter_df2.index, y=filter_df2[column], mode='lines', name=column))
+    fig2.add_trace(go.Scatter(x=[filter_df2.index[-1], filter_df2.index[0]], y=[filter_df2[column].std(), filter_df2[column].std()], mode='lines', name='Desviación Estándar'))
+    fig.update_layout(title=column, xaxis_title='Fecha', yaxis_title='MW')
+    st.plotly_chart(fig2)
+    st.write(f'')
+    st.write(f'')
+
