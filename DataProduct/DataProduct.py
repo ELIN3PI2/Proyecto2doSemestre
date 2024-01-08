@@ -123,9 +123,87 @@ with st.expander("Demanda vs Disponibilidad"):
 with st.expander("MW limitados en la generación térmica"):
     st.write("---")
     st.title("MW limitados y generación térmica:")
-    st.write("""
-             
-             """)
+    
+    st.markdown('A través de la energía térmica solar, se aprovecha una fuente de energía renovable, pues a diferencia de la energía fotovoltaica, la generación de energía térmica consiste en utilizar fuentes de energía renovable.')
+
+    if 'minima' not in st.session_state:
+        st.session_state.minima = dt(db['Fecha'].min().year, db['Fecha'].min().month, db['Fecha'].min().day)
+    if 'maxima' not in st.session_state:
+        st.session_state.maxima = dt(db['Fecha'].max().year, db['Fecha'].max().month, db['Fecha'].max().day)
+
+    inicio = st.date_input('Seleccionar fecha de inicio', key='inicio',min_value=db['Fecha'].min(), max_value=st.session_state.maxima, 
+                           value=st.session_state.minima)
+
+    # Crear otro widget st.date_input con una clave única
+    fin = st.date_input('Seleccionar fecha de fin', key='fin', min_value=db['Fecha'].min(), max_value=st.session_state.maxima, 
+                       value=st.session_state.maxima)
+    st.session_state.minima = dt(inicio.year, inicio.month, inicio.day)
+    st.session_state.maxima = dt(fin.year, fin.month, fin.day)
+    # Filtrar el dataframe por el rango de fechas seleccionado
+    data = db[(db['Fecha'] >= st.session_state.minima) & (db['Fecha'] <= st.session_state.maxima)]
+   
+    lista=[]
+    for i in data['MW limitados en la generacion termica']:
+        if i:
+            lista.append(i)
+        else:
+            lista.append(0)
+    fig_gt=px.scatter(data, x='Fecha', y='MW limitados en la generacion termica', 
+                      size=lista, 
+                 hover_name='MW limitados en la generacion termica', 
+                 log_y=True, size_max=60)
+    st.markdown('La cantidad de MW limitados en la generación térmica puede indicar la capacidad real de generación eléctrica disponible en un momento dado. '
+                'Si esta capacidad se ve limitada, podría haber problemas para satisfacer la demanda eléctrica, lo que a su vez podría afectar a los consumidores y a la economía en general.'
+                'Si hay una alta cantidad de MW limitados, podría indicar problemas en la infraestructura eléctrica que podrían resultar en cortes de energía o interrupciones en el suministro.')
+    
+    fig_gt.update_traces(marker=dict(color="blue", line=dict(width=1)))
+    st.plotly_chart(fig_gt)
+
+with st.expander('MW indisponible por averías y por mantenimiento'):
+    if 'start_day' not in st.session_state:
+        st.session_state.start_day = dt(db.index.min().year, db.index.min().month, db.index.min().day)
+    if 'end_day' not in st.session_state:
+        st.session_state.end_day = dt(db.index.max().year, db.index.max().month, db.index.max().day)
+    
+    start_day = st.date_input(label='Fecha inicial', value=st.session_state.start_day, min_value=db.index.min(), max_value=st.session_state.end_day)
+    st.session_state.start_day = dt(start_day.year, start_day.month, start_day.day)
+    end_day = st.date_input(label='Fecha final', value=st.session_state.end_day, min_value=st.session_state.start_day, max_value=db.index.max())
+    st.session_state.end_day = dt(end_day.year, end_day.month, end_day.day)
+
+    # Filtrar la bd con respecto a las fechas seleccionadas
+    filter_df2 = db[(db.index >= st.session_state.start_day) & (db.index <= st.session_state.end_date)]
+    filter_df2 = filter_df2[['MW indisponibles por averias', 'MW en mantenimiento']]
+
+    column = [i for i in filter_df2]
+    st.write(f'A continuación observamos el gráfico de {column[0]} y {column[1]} desde el {start_day.day}/{start_day.month}/{start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
+
+    fig1 = go.Figure()
+    for i in filter_df2:
+        fig1.add_scatter(x=filter_df2.index, y=filter_df2[i], mode='lines', name=i)
+    
+    st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[column[0]].mean(), 2)} es, aproximadamente, el promedio de {column[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[column[1]].mean(), 2)} es el aproximado correspondiente a {column[1]}. Además de esto, también tenemos una mediana de {filter_df2[column[0]].median()} en los {column[0]} y de {filter_df2[column[1]].median()} en {column[1]}.')
+    if len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) == 1:
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor pero, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
+    elif len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) > 1 or len(filter_df2[column[0]].mode()) > 1 and len(filter_df[column[1]].mode()) == 1:
+        if len(filter_df2[column[0]].mode()) > 1:
+            mw = column[0]
+            liste = [str(i) for i in filter_df[column[0]].mode()]
+        else:
+            mw = column[1]
+            liste = [str(i) for i in filter_df[column[1]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
+    else:
+        liste = [str(i) for i in filter_df[column[0]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango q usted eligió son {len(filter_df[column].mode())} valores y estos son {", ".join(liste)}')
+    st.write(f'Ahora toca mostrar el valor máximo, que en este conjunto de datos es de {filter_df[column].max()} y el valor mínimo que es de {filter_df[column].min()}')
+    st.write(f'Gracias a la desviación estándar podemos observar cuanto se aleja de su media, en este caso su valor es de aproximadamente {round(filter_df[column].std(), 2)}, a continuación muestro un gráfico comparando la desviación estándar y el gráfico de arriba:')
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=filter_df2.index, y=filter_df2[column], mode='lines', name=column))
+    fig2.add_trace(go.Scatter(x=[filter_df2.index[-1], filter_df2.index[0]], y=[filter_df2[column].std(), filter_df2[column].std()], mode='lines', name='Desviación Estándar'))
+    fig.update_layout(title=column, xaxis_title='Fecha', yaxis_title='MW')
+    st.plotly_chart(fig2)
+    st.write(f'')
+    st.write(f'')
     
 with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     st.title('Análisis de las termoeléctricas fuera de servicio y en mantenimiento')
@@ -262,49 +340,5 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     st.markdown('Se puede obtener una visión detallada de la distribución geográfica de las instalaciones afectadas. Este gráfico podría proporcionar información sobre las regiones específicas del país que podrían haber experimentado interrupciones en el suministro de energía debido a la falta de funcionamiento de las termoeléctricas. También podría revelar áreas donde se están realizando esfuerzos significativos para el mantenimiento y la mejora de la infraestructura energética.')
     st.markdown('Al analizar los nombres de las termoeléctricas afectadas, se podría identificar si ciertas plantas tienen un historial recurrente de problemas, esto podría ser útil para comprender mejor los desafíos específicos que enfrenta cada planta y para tomar decisiones informadas sobre la asignación de recursos para el mantenimiento y la reparación.')
 
-with st.expander('MW indisponible por averías y por mantenimiento'):
-    if 'start_day' not in st.session_state:
-        st.session_state.start_day = dt(db.index.min().year, db.index.min().month, db.index.min().day)
-    if 'end_day' not in st.session_state:
-        st.session_state.end_day = dt(db.index.max().year, db.index.max().month, db.index.max().day)
-    
-    start_day = st.date_input(label='Fecha inicial', value=st.session_state.start_day, min_value=db.index.min(), max_value=st.session_state.end_day)
-    st.session_state.start_day = dt(start_day.year, start_day.month, start_day.day)
-    end_day = st.date_input(label='Fecha final', value=st.session_state.end_day, min_value=st.session_state.start_day, max_value=db.index.max())
-    st.session_state.end_day = dt(end_day.year, end_day.month, end_day.day)
 
-    # Filtrar la bd con respecto a las fechas seleccionadas
-    filter_df2 = db[(db.index >= st.session_state.start_day) & (db.index <= st.session_state.end_date)]
-    filter_df2 = filter_df2[['MW indisponibles por averias', 'MW en mantenimiento']]
-
-    column = [i for i in filter_df2]
-    st.write(f'A continuación observamos el gráfico de {column[0]} y {column[1]} desde el {start_day.day}/{start_day.month}/{start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
-
-    fig1 = go.Figure()
-    for i in filter_df2:
-        fig1.add_scatter(x=filter_df2.index, y=filter_df2[i], mode='lines', name=i)
-    
-    st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[column[0]].mean(), 2)} es, aproximadamente, el promedio de {column[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[column[1]].mean(), 2)} es el aproximado correspondiente a {column[1]}. Además de esto, también tenemos una mediana de {filter_df2[column[0]].median()} en los {column[0]} y de {filter_df2[column[1]].median()} en {column[1]}.')
-    if len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) == 1:
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor pero, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
-    elif len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) > 1 or len(filter_df2[column[0]].mode()) > 1 and len(filter_df[column[1]].mode()) == 1:
-        if len(filter_df2[column[0]].mode()) > 1:
-            mw = column[0]
-            liste = [str(i) for i in filter_df[column[0]].mode()]
-        else:
-            mw = column[1]
-            liste = [str(i) for i in filter_df[column[1]].mode()]
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
-    else:
-        liste = [str(i) for i in filter_df[column[0]].mode()]
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango q usted eligió son {len(filter_df[column].mode())} valores y estos son {", ".join(liste)}')
-    st.write(f'Ahora toca mostrar el valor máximo, que en este conjunto de datos es de {filter_df[column].max()} y el valor mínimo que es de {filter_df[column].min()}')
-    st.write(f'Gracias a la desviación estándar podemos observar cuanto se aleja de su media, en este caso su valor es de aproximadamente {round(filter_df[column].std(), 2)}, a continuación muestro un gráfico comparando la desviación estándar y el gráfico de arriba:')
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=filter_df2.index, y=filter_df2[column], mode='lines', name=column))
-    fig2.add_trace(go.Scatter(x=[filter_df2.index[-1], filter_df2.index[0]], y=[filter_df2[column].std(), filter_df2[column].std()], mode='lines', name='Desviación Estándar'))
-    fig.update_layout(title=column, xaxis_title='Fecha', yaxis_title='MW')
-    st.plotly_chart(fig2)
-    st.write(f'')
-    st.write(f'')
 
