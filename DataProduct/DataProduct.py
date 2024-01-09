@@ -10,12 +10,9 @@ db=db.transpose() # Transponer el dataframe
 db = db.drop('Info', axis=1)
 
 with st.container():
-    st.title("El déficit de electricidad en Cuba")
-    st.write("""
-         En los últimos annos el país ha experimentado importantes afectaciones relacionadas con el Sistema Electroenergético Nacional, que unido a varias factores
-         la disponibilidad del petróleo y otros han generado gran descontento en la población. Es por eso que mediante el siguiente estudio se pretende que la población
-         adquiera un mayor conocimiento sobre el tema y de esta forma generar una mayor conciencia de por qué resulta importante el ahorro de electricidad.
-         """)
+    with st.container():
+        st.title("Electricidad en Cuba: un compromiso de todos⚡")
+        st.write("En los últimos años, el país ha enfrentado desafíos significativos en el ámbito energético, lo cual ha tenido un impacto directo en la disponibilidad de petróleo y otros recursos. Estos problemas han generado un malestar generalizado en la población, que busca soluciones efectivas y sostenibles. Es por ello que este estudio se presenta como una herramienta fundamental para que la población adquiera un mayor conocimiento sobre el tema y brindarle las herramientas necesarias para contribuir activamente a la solución de estos desafíos")
 
 with st.expander("Comportamiento de los parámetros"):
     #Titulo de la visualizacion
@@ -46,45 +43,41 @@ with st.expander("Comportamiento de los parámetros"):
 
     st.warning('Puede jugar con el gráfico seleccionando fechas y en la leyenda a la derecha lo que desee observar')
 
-mariandb = db
-mariandb.index.name = 'Fecha'
-mariandb = mariandb.reset_index()
-if mariandb['Fecha'].dtype != 'datetime64[ns]':
-    mariandb['Fecha'] = pd.to_datetime(mariandb['Fecha'])
+new_db = db
+new_db.index.name = 'Fecha'
+new_db = new_db.reset_index()
+if new_db['Fecha'].dtype != 'datetime64[ns]':
+    new_db['Fecha'] = pd.to_datetime(new_db['Fecha'])
         
-mariandb['Mes'] = mariandb['Fecha'].dt.month
-mariandb['Mes']=mariandb['Mes'].astype (str)
-mariandb['Año'] = mariandb['Fecha'].dt.year
+new_db['Mes'] = new_db['Fecha'].dt.month
+new_db['Mes']=new_db['Mes'].astype (str)
+new_db['Año'] = new_db['Fecha'].dt.year
 
-with st.expander("Máxima afectación durante el horario pico"):
+with st.expander("Comportamiento de la electricidad durante el horario pico"):
     st.write("---")
     st.title("Máxima afectación durante el horario pico:")
-    st.write(f"""A la largo de los annos las cifras de las máximas afectaciones durante el horario pico han sido bastante elevadas, principalmente en el anno 2022, donde alcanzaron los valores más elevados.
-             La maxima afectación del anno 2022 se reportó en el mes de octubre, cuyas afectaciones promedio en el mes fueron de  1138 MW aproximadamente. 
-             Sin embargo en 2023, la maxima afectacion por mes fue de 473.5 MW en el mes de abril, esto nos demuestra la existencia de factores que, unido a las diferentes
-             medidas tomadas por la empresa el'ectrica de conjunto con otros organismos, han posibilitado la disminución de la afectación.
-             De igual forma, el comportamiento de la variable no es igual entre ambos annos. Las máximas afectaciones de 2022 corresponden a los meses desde agosto hasta noviembre,
-             mientras que en 2023 las máximas afectaciones se corresponden a abril, septiembre, octubre y noviembre.
-             El mes de menor afectación en el anno 2022 es marzo, mientras que el mes de menor afectación en el 2023 es julio.
-             
-             """)
+    st.write(f"A la largo de los años las cifras de las máximas afectaciones durante el horario pico han sido bastante elevadas, principalmente en el año 2022, donde alcanzaron los valores más elevados. La maxima afectación del año 2022 se reportó en el mes de octubre, cuyas afectaciones promedio en el mes fueron de  1138 MW aproximadamente.")
+    st.write("Sin embargo en 2023, la maxima afectación por mes fue de 473.5 MW en el mes de abril, esto nos demuestra la existencia de factores que, unido a las diferentes medidas tomadas por la Empresa Eléctrica de conjunto con otros organismos, han posibilitado la disminución de la afectación.")
+    st.write("De igual forma, el comportamiento de la variable no es igual entre ambos años. Las máximas afectaciones de 2022 corresponden a los meses desde agosto hasta noviembre, mientras que en 2023 las máximas afectaciones se corresponden a abril, septiembre, octubre y noviembre. El mes de menor afectación en el año 2022 es marzo, mientras que el mes de menor afectación en el 2023 es julio. Con respecto al anno 2024 que recién empieza, se ha generado la suficiente energía para satisfacer la demanda y de esta forma no se han reportado afectaciones en el servicio eléctrico durante el horario pico en los finales del anno 2023 e inicios del 2024.")
  
     #Calcular la media por mes de la máxima afectación en el horario pico para cada año
-    media_por_mes = mariandb.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
+    new_db_filtered = new_db[new_db['Año'] != 2024]
+    media_por_mes = new_db_filtered.groupby(['Año', 'Mes'])['Maxima afectacion'].mean().reset_index()
     fig = px.bar(media_por_mes, x='Mes', y='Maxima afectacion', barmode="group",color='Año' ,color_discrete_sequence=px.colors.qualitative.Plotly)
 
     # Mostrar el gráfico en Streamlit
     st.write("Media de máxima afectación en el horario pico por mes")
     st.plotly_chart(fig)
     
+    st.write("El gráfico que se observa a continuación representa la distribución de la máxima afectación durante el horario pico de la electricidad. Cada caja en el gráfico muestra la dispersión y la variabilidad de los datos. Nos brinda información valiosa para comprender las tendencias y patrones en el consumo de electricidad y su impacto en nuestra red. Por ejemplo, si vemos una caja más alargada, esto podría indicar una mayor variabilidad en las afectaciones durante el horario pico, mientras que una caja más compacta sugeriría una distribución más uniforme.")
     #hacer un grafico de cajas:
     # Crear un selectbox para seleccionar el año
-    ano = st.selectbox("Selecciona un año", mariandb['Año'].unique())
+    ano = st.selectbox("Selecciona un año", new_db['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
-    mariandb_filtrado = mariandb[mariandb['Año'] == ano]
+    new_db_filtrado = new_db[new_db['Año'] == ano]
     # Crear el boxplot
-    boxplot = px.box(mariandb_filtrado, x="Mes", y="Maxima afectacion",
-                    title='Distribución de Máxima Afectación durante Horario Pico de Megawatts por Mes',
+    boxplot = px.box(new_db_filtrado, x="Mes", y="Maxima afectacion",
+                    title='Distribución de la máxima afectación durante horario pico de megawatts por mes',
                     labels={'Max_Afectacion_Horario_Pico_MW': 'Máxima Afectación (MW)', 'x': 'Mes'},
                     color_discrete_sequence=['#2B83BA'])
     st.plotly_chart(boxplot)
@@ -92,36 +85,26 @@ with st.expander("Máxima afectación durante el horario pico"):
 with st.expander("Demanda vs Disponibilidad"):
     st.write("---")
     st.title("Disponibilidad vs Demanda")
-    st.write("""
-             La disponibilidad y la demanda del sistema electroenergetico nacional varia con el transcurso del día, por lo que, para el análisis de esta variable hemos
-             analizado la disponibilidad y la demanda a las 6:00-7:00 am.
-             Resulta imposible hablar de disponibilidad sin hablar de demanda y viceversa, lo cual se comprueba en el siguiente grafico que muestra la fuerte correlaci'on exitente entre las dos variables:
-             """)
+    st.write("La disponibilidad y la demanda en el sistema electroenergético nacional son dos aspectos fundamentales que están estrechamente interrelacionados. La variación en la disponibilidad de energía eléctrica a lo largo del día está directamente relacionada con los patrones de demanda de los consumidores. Por lo tanto, es crucial analizar ambas variables de manera conjunta para comprender completamente la dinámica del sistema eléctrico. En nuestro análisis analizamos  la disponibilidad y demanda del SEN entre las 6:00-7:00 am, podemos observar cómo la disponibilidad de energía eléctrica se alinea estrechamente con la demanda en ese horario específico. Esto se evidencia en el gráfico que muestra una fuerte correlación entre ambas variables. La alta correlación entre la disponibilidad y la demanda en este intervalo de tiempo sugiere que la capacidad de generación eléctrica está adecuadamente alineada con las necesidades de consumo durante esa hora específica.")
     #grafico de dispersion
-    fig = px.scatter(mariandb_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
+    fig = px.scatter(new_db_filtrado, x='Demanda del dia', y='MW disponibles', text='Mes', title='Demanda vs. Disponibilidad')
     # Personalizar el diseño del gráfico
     fig.update_traces(marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')),
                     selector=dict(mode='markers+text'))
     # Visualizar el gráfico en Streamlit
     st.plotly_chart(fig)
     
-    st.write("""
-             De la misma forma, en dependencia de la disponibilidad y la demanda del día es posible conocer el déficit diario de electricidad, y de esta forma conocer los meses de mayor déficit.
-             De esta forma los meses de mayor deficit de electricidad de 2022 corresponden con junio, septiembre y noviembre.
-             En 2023 el mayor deficit estuvo dado en los meses de septiembre, octubre, noviembre y junio. 
-             Por lo que coinciden los meses de junio, septiembre y noviembre como meses con mayor deficit de electricidad en el anno.
-             """
-    )
+    st.write("De la misma forma, en dependencia de la disponibilidad y la demanda del día es posible conocer el déficit diario de electricidad, y de esta forma conocer los meses de mayor déficit. Los meses de mayor déficit de electricidad de 2022 corresponden con junio, septiembre y noviembre. En 2023 el mayor déficit estuvo dado en los meses de septiembre, octubre, noviembre y junio. Por lo que coinciden los meses de junio, septiembre y noviembre como meses con mayor déficit de electricidad en el año.")
     
-    deficit=mariandb["Demanda del dia"]-mariandb["MW disponibles"]
+    deficit=new_db["Demanda del dia"]-new_db["MW disponibles"]
     deficit[deficit<0]=0
-    mariandb["Deficit"]=deficit
-    year=st.selectbox("Seleccione el anno",mariandb['Año'].unique())
-    media_deficit = mariandb.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
-    mariandb_filtrado2 = mariandb[mariandb['Año'] == year]
-    fig=px.bar(mariandb_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
+    new_db["Deficit"]=deficit
+    year=st.selectbox("Seleccione el año",new_db['Año'].unique())
+    media_deficit = new_db.groupby(['Año', 'Mes'])['Deficit'].mean().reset_index()
+    new_db_filtrado2 = new_db[new_db['Año'] == year]
+    fig=px.bar(new_db_filtrado2, x='Mes', y='Deficit', title=f'Déficit por mes en {ano}')
     st.plotly_chart(fig)
-    
+
 with st.expander("MW limitados en la generación térmica"):
     st.write("---")
     st.title("MW limitados y generación térmica:")
@@ -311,9 +294,9 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     
     st.subheader('Frecuencias de las termoeléctricas por estado')
     # Crear un selectbox para seleccionar el año
-    year = st.selectbox("Seleccione un año", mariandb['Año'].unique())
+    year = st.selectbox("Seleccione un año", new_db['Año'].unique())
     # Filtrar el dataframe basado en la selección del usuario
-    filtrado = mariandb[mariandb['Año'] == year]
+    filtrado = new_db[new_db['Año'] == year]
     
     thermoelectric=[]
     for i in filtrado['Termoelectricas en mantenimiento']:
