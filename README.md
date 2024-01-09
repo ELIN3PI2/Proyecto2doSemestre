@@ -1,6 +1,11 @@
 # Infraestructura del Sistema Energético
- 
+
 Marian Aguilar Tavier
+
 Vicente Cao Tarrero
-Katherine Rodríguez Rodríguez 
+
+Jessica de la Caridad Pérez Rodríguez
+
+Katherine Rodríguez Rodríguez
+
 Xavier Suárez Arcia

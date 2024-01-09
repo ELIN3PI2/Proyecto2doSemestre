@@ -1,6 +1,7 @@
-import os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go
+import os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go, numpy as np, matplotlib.pyplot as plt, seaborn as sns
 from datetime import datetime as dt
 from streamlit_folium import folium_static
+from sklearn.linear_model import LinearRegression
 
 # Cargamos el contenido del json en un Data Frame obteniendo la ruta q contiene el archivo y luego combinando
 # Con con el nombre del json
@@ -19,8 +20,7 @@ with st.container():
 with st.expander("Comportamiento de los parámetros"):
     #Titulo de la visualizacion
     st.title("Comportamiento de los diferentes parámetros a lo largo del tiempo")
-    categories = ["MW disponibles","Demanda del dia","MW indisponibles por averias","MW en mantenimiento","MW limitados en la generacion termica"]
-    
+    st.write('Insertar algo para explicar el siguiente gráfico')
     if 'start_date' not in st.session_state:
         st.session_state.start_date = dt(db.index.min().year, db.index.min().month, db.index.min().day)
     if 'end_date' not in st.session_state:
@@ -43,6 +43,8 @@ with st.expander("Comportamiento de los parámetros"):
         fig.add_scatter(x=filter_df.index , y=filter_df[line], mode="lines", name=line)
     fig.update_layout(title='Comportamiento de los parámetros', xaxis_title='Tiempo', yaxis_title='Cantidad')
     st.plotly_chart(fig)
+
+    st.warning('Puede jugar con el gráfico seleccionando fechas y en la leyenda a la derecha lo que desee observar')
 
 mariandb = db
 mariandb.index.name = 'Fecha'
@@ -127,20 +129,16 @@ with st.expander("MW limitados en la generación térmica"):
     st.markdown('A través de la energía térmica solar, se aprovecha una fuente de energía renovable, pues a diferencia de la energía fotovoltaica, la generación de energía térmica consiste en utilizar fuentes de energía renovable.')
 
     if 'minima' not in st.session_state:
-        st.session_state.minima = dt(db['Fecha'].min().year, db['Fecha'].min().month, db['Fecha'].min().day)
+        st.session_state.minima = dt(db.index.min().year, db.index.min().month, db.index.min().day)
     if 'maxima' not in st.session_state:
-        st.session_state.maxima = dt(db['Fecha'].max().year, db['Fecha'].max().month, db['Fecha'].max().day)
+        st.session_state.maxima = dt(db.index.max().year, db.index.max().month, db.index.max().day)
 
-    inicio = st.date_input('Seleccionar fecha de inicio', key='inicio',min_value=db['Fecha'].min(), max_value=st.session_state.maxima, 
-                           value=st.session_state.minima)
-
-    # Crear otro widget st.date_input con una clave única
-    fin = st.date_input('Seleccionar fecha de fin', key='fin', min_value=db['Fecha'].min(), max_value=st.session_state.maxima, 
-                       value=st.session_state.maxima)
+    inicio = st.date_input('Seleccionar fecha de inicio', key='inicio',min_value=db.index.min(), max_value=st.session_state.maxima, value=st.session_state.minima)
+    fin = st.date_input('Seleccionar fecha de fin', key='fin', min_value=st.session_state.minima, max_value=db.index.max(), value=st.session_state.maxima)
     st.session_state.minima = dt(inicio.year, inicio.month, inicio.day)
     st.session_state.maxima = dt(fin.year, fin.month, fin.day)
     # Filtrar el dataframe por el rango de fechas seleccionado
-    data = db[(db['Fecha'] >= st.session_state.minima) & (db['Fecha'] <= st.session_state.maxima)]
+    data = db[(db.index >= st.session_state.minima) & (db.index <= st.session_state.maxima)]
    
     lista=[]
     for i in data['MW limitados en la generacion termica']:
@@ -148,7 +146,7 @@ with st.expander("MW limitados en la generación térmica"):
             lista.append(i)
         else:
             lista.append(0)
-    fig_gt=px.scatter(data, x='Fecha', y='MW limitados en la generacion termica', 
+    fig_gt=px.scatter(data, x=data.index, y='MW limitados en la generacion termica', 
                       size=lista, 
                  hover_name='MW limitados en la generacion termica', 
                  log_y=True, size_max=60)
@@ -164,47 +162,70 @@ with st.expander('MW indisponible por averías y por mantenimiento'):
         st.session_state.start_day = dt(db.index.min().year, db.index.min().month, db.index.min().day)
     if 'end_day' not in st.session_state:
         st.session_state.end_day = dt(db.index.max().year, db.index.max().month, db.index.max().day)
-    
     start_day = st.date_input(label='Fecha inicial', value=st.session_state.start_day, min_value=db.index.min(), max_value=st.session_state.end_day)
     st.session_state.start_day = dt(start_day.year, start_day.month, start_day.day)
     end_day = st.date_input(label='Fecha final', value=st.session_state.end_day, min_value=st.session_state.start_day, max_value=db.index.max())
     st.session_state.end_day = dt(end_day.year, end_day.month, end_day.day)
-
-    # Filtrar la bd con respecto a las fechas seleccionadas
-    filter_df2 = db[(db.index >= st.session_state.start_day) & (db.index <= st.session_state.end_date)]
+    filter_df2 = db[(db.index >= st.session_state.start_day) & (db.index <= st.session_state.end_day)]
     filter_df2 = filter_df2[['MW indisponibles por averias', 'MW en mantenimiento']]
-
-    column = [i for i in filter_df2]
-    st.write(f'A continuación observamos el gráfico de {column[0]} y {column[1]} desde el {start_day.day}/{start_day.month}/{start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
-
+    col = [i for i in filter_df2]
+    st.write(f'A continuación observamos el gráfico de {col[0]} y {col[1]} desde el {st.session_state.start_day.day}/{st.session_state.start_day.month}/{st.session_state.start_day.year} hata el {st.session_state.end_day.day}/{st.session_state.end_day.month}/{st.session_state.end_day.year}, fecha que se puede modificar como usted desee.')
     fig1 = go.Figure()
     for i in filter_df2:
         fig1.add_scatter(x=filter_df2.index, y=filter_df2[i], mode='lines', name=i)
-    
-    st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[column[0]].mean(), 2)} es, aproximadamente, el promedio de {column[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[column[1]].mean(), 2)} es el aproximado correspondiente a {column[1]}. Además de esto, también tenemos una mediana de {filter_df2[column[0]].median()} en los {column[0]} y de {filter_df2[column[1]].median()} en {column[1]}.')
-    if len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) == 1:
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor pero, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
-    elif len(filter_df2[column[0]].mode()) == 1 and len(filter_df[column[1]].mode()) > 1 or len(filter_df2[column[0]].mode()) > 1 and len(filter_df[column[1]].mode()) == 1:
-        if len(filter_df2[column[0]].mode()) > 1:
-            mw = column[0]
-            liste = [str(i) for i in filter_df[column[0]].mode()]
+    fig1.update_layout(title='MW indisponible por averías y por mantenimiento', xaxis_title='Fecha', yaxis_title='MW')
+    st.plotly_chart(fig1)
+
+    st.write(f'Empezando con el análisis de sus datos elegidos, les mostraré las medidas de tendencia central correspondientes, como por ejemplo, {round(filter_df2[col[0]].mean(), 2)} es, aproximadamente, el promedio de {col[0]} que hubo en el período de tiempo seleccionado y {round(filter_df2[col[1]].mean(), 2)} es el promedio aproximado correspondiente a {col[1]}. Además de esto, también tenemos una mediana de {filter_df2[col[0]].median()} para los {col[0]} y de {filter_df2[col[1]].median()} para {col[1]}.')
+    if len(filter_df2[col[0]].mode()) == 1 and len(filter_df[col[1]].mode()) == 1:
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor pero, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[col[0]].mode()[0]} y de {filter_df[col[1]].mode()[0]} respectivamente')
+    elif len(filter_df2[col[0]].mode()) == 1 and len(filter_df[col[1]].mode()) > 1 or len(filter_df2[col[0]].mode()) > 1 and len(filter_df[col[1]].mode()) == 1:
+        if len(filter_df2[col[0]].mode()) > 1:
+            mw1 = col[1]
+            mw2 = col[0]
+            liste = [str(i) for i in filter_df[col[0]].mode()]
         else:
-            mw = column[1]
-            liste = [str(i) for i in filter_df[column[1]].mode()]
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango que usted eligió en este caso, si es un solo valor en ambas columnas y estos son {filter_df[column[0]].mode()[0]} y de {filter_df[column[1]].mode()[0]} respectivamente')
+            mw1 = col[0]
+            mw2 = col[1]
+            liste = [str(i) for i in filter_df[col[1]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, en el rango que usted eligió en este caso, {mw1} es un solo valor, el cual es {filter_df2[mw1].mode()} y {mw2} tiene {len(filter_df2[mw2].mode())} valores y estos son {", ".join(liste)}')
     else:
-        liste = [str(i) for i in filter_df[column[0]].mode()]
-        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango q usted eligió son {len(filter_df[column].mode())} valores y estos son {", ".join(liste)}')
-    st.write(f'Ahora toca mostrar el valor máximo, que en este conjunto de datos es de {filter_df[column].max()} y el valor mínimo que es de {filter_df[column].min()}')
-    st.write(f'Gracias a la desviación estándar podemos observar cuanto se aleja de su media, en este caso su valor es de aproximadamente {round(filter_df[column].std(), 2)}, a continuación muestro un gráfico comparando la desviación estándar y el gráfico de arriba:')
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=filter_df2.index, y=filter_df2[column], mode='lines', name=column))
-    fig2.add_trace(go.Scatter(x=[filter_df2.index[-1], filter_df2.index[0]], y=[filter_df2[column].std(), filter_df2[column].std()], mode='lines', name='Desviación Estándar'))
-    fig.update_layout(title=column, xaxis_title='Fecha', yaxis_title='MW')
-    st.plotly_chart(fig2)
-    st.write(f'')
-    st.write(f'')
+        liste1 = [str(i) for i in filter_df[col[0]].mode()]
+        liste2 = [str(i) for i in filter_df[col[1]].mode()]
+        st.write(f'En el caso de la moda, no necesariamente es un solo valor, de echo, en el rango q usted eligió son {len(filter_df[col[0]].mode())} valores para {col[0]}, los cuales son {", ".join(liste1)} y {len(filter_df[col[1]].mode())}')
     
+    st.write(f'Ahora toca mostrar los valores máximo y mínimo, que en este conjunto de datos es de {filter_df[col[0]].min()} y {filter_df[col[0]].max()} en {col[0]} y de {filter_df[col[1]].min()} y {filter_df[col[1]].max()} en {col[1]}')
+    
+    st.write(f'Gracias a la desviación estándar podemos observar cuanto se aleja de su media, en este caso su valor es de aproximadamente {round(filter_df[col[0]].std(), 2)} en {col[0]} y de {round(filter_df[col[1]].std(), 2)} en {col[1]}, a continuación podemos observar un gráfico de desviación estándar')
+    data = {
+        'Variable': col,
+        'Mean': [filter_df2[col[0]].mean(), filter_df2[col[1]].mean()],
+        'Std_dev': [filter_df2[col[0]].std(), filter_df2[col[1]].std()]
+    }
+    summary_df = pd.DataFrame(data)
+    fig2 = px.bar(summary_df, x='Variable', y='Mean', error_y='Std_dev', title='Media y desviación estándar')
+    fig2.update_layout(yaxis_title='Valor', xaxis_title='Variable')
+    st.plotly_chart(fig2)
+    st.write(f'Las barras en el gráfico representan cuánto se alejan los datos individuales de la media. Si las barras son cortas, significa que los datos tienden a estar más cerca de la media, mientras que si son largas, indica que los datos están más dispersos.')
+    
+    st.write(f'Ahora veremos un gráfico de regresión sobre la cantidad de MW indisponibles en total, pero. ¿Qué es una regresión y que observamos en un gráfico de ella?')
+    st.write('Una regresión lineal es un método estadístico que se utiliza para modelar la relación entre una variable independiente (X) y una variable dependiente (Y) mediante una línea recta. El objetivo es encontrar la mejor línea recta que se ajuste a los datos observados, de manera que pueda utilizarse para predecir los valores de la variable dependiente basándose en los valores de la variable independiente. Ahora, un gráfico de regresión lineal muestra los puntos de datos observados y la línea recta que mejor se ajusta a esos puntos')
+    mwindisp = filter_df2
+    mwindisp['MW Indisponibles'] = filter_df2[col[0]] + filter_df2[col[1]]
+    mwindisp = mwindisp.dropna(subset=['MW Indisponibles'])
+    fig3 = go.Figure()
+    fig3.add_trace(go.Scatter(x=mwindisp.index, y=mwindisp['MW Indisponibles'], mode='lines+markers', name='MW Indisponibles'))
+    X = np.arange(len(mwindisp.index)).reshape(-1, 1)
+    y = mwindisp['MW Indisponibles']
+    model = LinearRegression()
+    model.fit(X, y)
+    fig3.add_trace(go.Scatter(x=mwindisp.index, y=model.predict(X), mode='lines', name='Regresión Lineal', line=dict(color='red', dash='dash')))
+    fig3.update_layout(title='MW Indisponibles y Regresión Lineal',
+                                xaxis_title='Fecha',
+                                yaxis_title='MW Indisponibles',
+                                showlegend=True)
+    st.plotly_chart(fig3)
+
 with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     st.title('Análisis de las termoeléctricas fuera de servicio y en mantenimiento')
     st.markdown('En el país existen ocho centrales termoeléctricas con un total de 20 bloques en explotación, que constituyen la parte más importante de la generación base del sistema eléctrico.')
