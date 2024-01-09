@@ -17,7 +17,6 @@ with st.container():
 with st.expander("Comportamiento de los parámetros"):
     #Titulo de la visualizacion
     st.title("Comportamiento de los diferentes parámetros a lo largo del tiempo")
-    st.write('Insertar algo para explicar el siguiente gráfico')
     if 'start_date' not in st.session_state:
         st.session_state.start_date = dt(db.index.min().year, db.index.min().month, db.index.min().day)
     if 'end_date' not in st.session_state:
