@@ -343,6 +343,12 @@ with st.expander('Termoeléctricas fuera de servicio y en mantenimiento'):
     st.plotly_chart(fig_b)
     st.markdown('Se puede obtener una visión detallada de la distribución geográfica de las instalaciones afectadas. Este gráfico podría proporcionar información sobre las regiones específicas del país que podrían haber experimentado interrupciones en el suministro de energía debido a la falta de funcionamiento de las termoeléctricas. También podría revelar áreas donde se están realizando esfuerzos significativos para el mantenimiento y la mejora de la infraestructura energética.')
     st.markdown('Al analizar los nombres de las termoeléctricas afectadas, se podría identificar si ciertas plantas tienen un historial recurrente de problemas, esto podría ser útil para comprender mejor los desafíos específicos que enfrenta cada planta y para tomar decisiones informadas sobre la asignación de recursos para el mantenimiento y la reparación.')
-
+    
+    with st.container():
+        st.write("---")
+        st.write("Si estás interesado en explorar opciones de soluciones sostenibles, te invitamos a escuchar un podcast especializado que aborda en detalle el impacto y las ventajas de la energía fotovoltaica, una alternativa prometedora para mitigar los desafíos energéticos actuales. Además, para comprender mejor la historia y el funcionamiento de la termoeléctrica más importante en nuestro país en los últimos años, te presentamos un recurso adicional que detalla su evolución a lo largo del tiempo. A continuación, encontrarás los enlaces a estos recursos que complementarán tu comprensión sobre este tema.")
+        st.markdown("[Podcast\"GreenFusion\",conoce un poco más sobre la energía fotovoltaica en Cuba](https://drive.google.com/file/d/1mkzmsBesE4ETYBjcPT4P5dZ45MK3a9eL/view?usp=drive_link)")
+        st.markdown("[Conoce un poco más sobre la termoeléctrica más eficiente del país](https://drive.google.com/file/d/1APN_n0xGkEO_5Lid8VZK4ldJVMyBVhCk/view?usp=drive_link)")
+   
 
 
