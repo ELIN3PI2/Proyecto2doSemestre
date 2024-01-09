@@ -1,4 +1,4 @@
-import os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go, numpy as np, matplotlib.pyplot as plt, seaborn as sns
+file:///home/katy/Katy/Infraestructura-del-Sistema-Energetico/DataProduct/DataProduct.pyimport os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go, numpy as np, matplotlib.pyplot as plt, seaborn as sns
 from datetime import datetime as dt
 from streamlit_folium import folium_static
 from sklearn.linear_model import LinearRegression
@@ -107,7 +107,7 @@ with st.expander("Demanda vs Disponibilidad"):
 
 with st.expander("MW limitados en la generación térmica"):
     st.write("---")
-    st.title("MW limitados y generación térmica:")
+    st.title("MW limitados en la generación térmica:")
     
     st.markdown('A través de la energía térmica solar, se aprovecha una fuente de energía renovable, pues a diferencia de la energía fotovoltaica, la generación de energía térmica consiste en utilizar fuentes de energía renovable.')
 
