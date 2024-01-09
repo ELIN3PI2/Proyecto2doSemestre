@@ -1,4 +1,4 @@
-file:///home/katy/Katy/Infraestructura-del-Sistema-Energetico/DataProduct/DataProduct.pyimport os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go, numpy as np, matplotlib.pyplot as plt, seaborn as sns
+import os, folium, streamlit as st, pandas as pd, plotly.express as px, plotly.graph_objects as go, numpy as np, matplotlib.pyplot as plt, seaborn as sns
 from datetime import datetime as dt
 from streamlit_folium import folium_static
 from sklearn.linear_model import LinearRegression
